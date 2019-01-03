@@ -1,0 +1,7 @@
+[package]
+name = "rust-parquet"
+version = "0.1.0"
+authors = ["Brent Gardner <bgardner@squarelabs.net>"]
+
+[dependencies]
+parquet = "0.4"
