@@ -5,3 +5,4 @@ authors = ["Brent Gardner <bgardner@squarelabs.net>"]
 
 [dependencies]
 parquet = "0.4"
+arrow = "0.11.0"
