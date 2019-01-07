@@ -28,7 +28,10 @@ fn main() {
     let file_metadata = parquet_metadata.file_metadata();
     let schema = file_metadata.schema();
     let slice = schema.get_fields();
+    let mut i = 0;
     for element in slice.iter() {
+        println!("el[{}]: {:?}", i, element);
+        i += 1;
         match element.borrow() {
             PrimitiveType {
                 basic_info,
@@ -43,25 +46,32 @@ fn main() {
                     false
                 };
                 match physical_type {
-                    parquet::basic::Type::DOUBLE => {
-                        fields.push(Field::new(basic_info.name(), DataType::Float64, nullable));
-                        let mut col: Vec<f64> = Vec::new();
-                        data.push(Box::new(col));
-                    }
                     parquet::basic::Type::BOOLEAN => {
                         fields.push(Field::new(basic_info.name(), DataType::Boolean, nullable));
-                        let mut col: Vec<bool> = Vec::new();
-                        data.push(Box::new(col));
+                        data.push(Box::new(Vec::<bool>::new()));
                     }
-                    parquet::basic::Type::INT32 => println!("INT32 {:?}", basic_info.name()),
-                    parquet::basic::Type::INT64 => println!("INT64 {:?}", basic_info.name()),
-                    parquet::basic::Type::INT96 => println!("INT96 {:?}", basic_info.name()),
-                    parquet::basic::Type::FLOAT => println!("FLOAT {:?}", basic_info.name()),
+                    parquet::basic::Type::INT32 => {
+                        fields.push(Field::new(basic_info.name(), DataType::Int32, nullable));
+                        data.push(Box::new(Vec::<i32>::new()));
+                    },
+                    parquet::basic::Type::INT64 => {
+                        fields.push(Field::new(basic_info.name(), DataType::Int64, nullable));
+                        data.push(Box::new(Vec::<i64>::new()));
+                    },
+                    parquet::basic::Type::INT96 => panic!("INT96 not implemented!"),
+                    parquet::basic::Type::FLOAT => {
+                        fields.push(Field::new(basic_info.name(), DataType::Float32, nullable));
+                        data.push(Box::new(Vec::<f32>::new()));
+                    },
+                    parquet::basic::Type::DOUBLE => {
+                        fields.push(Field::new(basic_info.name(), DataType::Float64, nullable));
+                        data.push(Box::new(Vec::<f64>::new()));
+                    }
                     parquet::basic::Type::BYTE_ARRAY => {
                         match basic_info.logical_type() {
                             parquet::basic::LogicalType::UTF8 => {
                                 fields.push(Field::new(basic_info.name(), DataType::Utf8, nullable));
-                                let mut col: Vec<&String> = Vec::new();
+                                let mut col: Vec<String> = Vec::new();
                                 data.push(Box::new(col));
                             }
                             _ => {}
@@ -89,17 +99,16 @@ fn main() {
     let mut iter = reader.get_row_iter(None).unwrap();
     while let Some(record) = iter.next() {
         for i in 0..record.len() {
+            println!("Processing field {}", i);
             match fields[i].data_type() {
                 DataType::Float64 => {
                     let val = record.get_double(i).unwrap();
-                    let boxed = data.get_mut(i).unwrap();
-                    let column: &mut Vec<f64> = boxed.downcast_mut().unwrap();
+                    let column: &mut Vec<f64> = data[i].downcast_mut().unwrap();
                     column.push(val);
                 },
                 DataType::Utf8 => {
-                    let val = record.get_string(i).unwrap();
-                    let boxed = data.get_mut(i).unwrap();
-                    let column: &mut Vec<&String> = boxed.downcast_mut().unwrap();
+                    let val = record.get_string(i).unwrap().clone();
+                    let column: &mut Vec<String> = data[i].downcast_mut().unwrap();
                     column.push(val);
                 },
                 _ => panic!("Unknown type: {:?}", fields[i].data_type())
