@@ -10,7 +10,6 @@ use parquet::basic::LogicalType;
 use parquet::schema::types::Type::GroupType;
 use parquet::schema::types::Type::PrimitiveType;
 use std::any::Any;
-use std::borrow::Borrow;
 use std::env;
 use std::fs::File;
 use std::path::Path;
@@ -21,23 +20,13 @@ fn main() {
     println!("Reading path: {}", path);
 
     // schema
-    let mut fields: Vec<Field> = Vec::new();
-    let mut data: Vec<Box<Any>> = Vec::new();
     let file = File::open(&Path::new(&path)).unwrap();
     let reader = SerializedFileReader::new(file).unwrap();
     let parquet_metadata = reader.metadata();
     let file_metadata = parquet_metadata.file_metadata();
     let schema = file_metadata.schema();
-    let slice = schema.get_fields();
-    let mut i = 0;
-    for element in slice.iter() {
-        println!("el[{}]: {:?}", i, element);
-        i += 1;
-        let vec = parquet_type_to_vec(element.borrow());
-        let field = parquet_type_to_arrow_field(element.borrow());
-        fields.push(field);
-        data.push(vec);
-    }
+    let fields: Vec<Field> = schema.get_fields().iter().map(|x| type2field(x)).collect();
+    let mut data: Vec<Box<Any>> = schema.get_fields().iter().map(|x| type2vec(x)).collect();
 
     // data
     let file = File::open(&Path::new(&path)).unwrap();
@@ -72,7 +61,7 @@ fn main() {
 //    );
 }
 
-fn parquet_type_to_vec(t: &parquet::schema::types::Type) -> Box<Any> {
+fn type2vec(t: &parquet::schema::types::Type) -> Box<Any> {
     use parquet::basic::Type;
     match t {
         PrimitiveType {
@@ -116,13 +105,13 @@ fn parquet_type_to_vec(t: &parquet::schema::types::Type) -> Box<Any> {
                 }
             }
         },
-        GroupType { basic_info, fields } => {
+        GroupType { basic_info: _, fields: _ } => {
             panic!("Unknown type!");
         }
     }
 }
 
-fn parquet_type_to_arrow_field(t: &parquet::schema::types::Type) -> Field {
+fn type2field(t: &parquet::schema::types::Type) -> Field {
     use parquet::basic::Type;
     match t {
         PrimitiveType {
@@ -172,7 +161,7 @@ fn parquet_type_to_arrow_field(t: &parquet::schema::types::Type) -> Field {
                 }
             }
         },
-        GroupType { basic_info, fields } => {
+        GroupType { basic_info: _, fields: _ } => {
             panic!("Unknown type!");
         }
     };
