@@ -4,6 +4,6 @@ version = "0.1.0"
 authors = ["Brent Gardner <bgardner@squarelabs.net>"]
 
 [dependencies]
-parquet = "0.4"
 #arrow = "0.11.0"
-arrow = { path = "../arrow/rust" }
+arrow = { path = "../arrow/rust/arrow" }
+parquet = { path = "../arrow/rust/parquet" }

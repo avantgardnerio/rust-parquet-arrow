@@ -476,9 +476,9 @@ dependencies = [
 
 [[package]]
 name = "parquet"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.12.0-SNAPSHOT"
 dependencies = [
+ "arrow 0.12.0-SNAPSHOT",
  "brotli 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -605,7 +605,7 @@ name = "rust-parquet"
 version = "0.1.0"
 dependencies = [
  "arrow 0.12.0-SNAPSHOT",
- "parquet 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parquet 0.12.0-SNAPSHOT",
 ]
 
 [[package]]
@@ -901,7 +901,6 @@ dependencies = [
 "checksum num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0b3a5d7cc97d6d30d8b9bc8fa19bf45349ffe46241e8816f50f62f6d6aaabee1"
 "checksum num_cpus 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5a69d464bdc213aaaff628444e99578ede64e9c854025aa43b9796530afa9238"
 "checksum ordered-float 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7eb5259643245d3f292c7a146b2df53bba24d7eab159410e648eb73dc164669d"
-"checksum parquet 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "8a81318f98aa95b2568838cc1a7c3a8f96fda8da363557b491381c6b11b12a53"
 "checksum parquet-format 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "240935949a101d144214c757363c2eb5be2bff38d19a3c388d738f8c9db77884"
 "checksum proc-macro2 0.4.24 (registry+https://github.com/rust-lang/crates.io-index)" = "77619697826f31a02ae974457af0b29b723e5619e113e9397b8b82c6bd253f09"
 "checksum pulldown-cmark 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "eef52fac62d0ea7b9b4dc7da092aa64ea7ec3d90af6679422d3d7e0e14b6ee15"
