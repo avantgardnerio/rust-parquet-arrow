@@ -112,15 +112,19 @@ fn type2field(t: &parquet::schema::types::Type) -> Field {
         GroupType { basic_info, fields } => {
             match basic_info.logical_type() {
                 LogicalType::LIST => {
-//                    let field = Field::new()
-//                    let data_type = DataType::Struct(field);
-//                    return Field::new(name, data_type, nullable);
-                    let len = fields.len();
-                    fields.iter().for_each( |f| {
-                        println!("{:?} {:?}", len, f);
-                        panic!("Unknown type!");
-                    });
-                    panic!("Unknown type!");
+                    let name = basic_info.name();
+                    let sub_fields = fields.iter().map(|f| type2field(f)).collect();
+                    let sub_struct = DataType::Struct(sub_fields);
+                    let data_type = DataType::List(Box::new(sub_struct));
+                    let field = Field::new(name, data_type, true);
+                    return field;
+                }
+                LogicalType::NONE => {
+                    let name = basic_info.name();
+                    let sub_fields = fields.iter().map(|f| type2field(f)).collect();
+                    let sub_struct = DataType::Struct(sub_fields);
+                    let field = Field::new(name, sub_struct, true);
+                    return field;
                 }
                 _ => panic!("Unknown type!")
             }
