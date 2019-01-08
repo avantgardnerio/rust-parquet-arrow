@@ -6,6 +6,7 @@ extern crate parquet;
 use arrow::datatypes::*;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::record::RowAccessor;
+use parquet::basic::LogicalType;
 use parquet::schema::types::Type::GroupType;
 use parquet::schema::types::Type::PrimitiveType;
 use std::any::Any;
@@ -32,65 +33,10 @@ fn main() {
     for element in slice.iter() {
         println!("el[{}]: {:?}", i, element);
         i += 1;
-        match element.borrow() {
-            PrimitiveType {
-                basic_info,
-                physical_type,
-                type_length: _,
-                scale: _,
-                precision: _
-            } => {
-                let nullable = if basic_info.has_repetition() {
-                    basic_info.repetition() != parquet::basic::Repetition::REQUIRED
-                } else {
-                    false
-                };
-                match physical_type {
-                    parquet::basic::Type::BOOLEAN => {
-                        fields.push(Field::new(basic_info.name(), DataType::Boolean, nullable));
-                        data.push(Box::new(Vec::<bool>::new()));
-                    }
-                    parquet::basic::Type::INT32 => {
-                        fields.push(Field::new(basic_info.name(), DataType::Int32, nullable));
-                        data.push(Box::new(Vec::<i32>::new()));
-                    },
-                    parquet::basic::Type::INT64 => {
-                        fields.push(Field::new(basic_info.name(), DataType::Int64, nullable));
-                        data.push(Box::new(Vec::<i64>::new()));
-                    },
-                    parquet::basic::Type::INT96 => panic!("INT96 not implemented!"),
-                    parquet::basic::Type::FLOAT => {
-                        fields.push(Field::new(basic_info.name(), DataType::Float32, nullable));
-                        data.push(Box::new(Vec::<f32>::new()));
-                    },
-                    parquet::basic::Type::DOUBLE => {
-                        fields.push(Field::new(basic_info.name(), DataType::Float64, nullable));
-                        data.push(Box::new(Vec::<f64>::new()));
-                    }
-                    parquet::basic::Type::BYTE_ARRAY => {
-                        match basic_info.logical_type() {
-                            parquet::basic::LogicalType::UTF8 => {
-                                fields.push(Field::new(basic_info.name(), DataType::Utf8, nullable));
-                                let mut col: Vec<String> = Vec::new();
-                                data.push(Box::new(col));
-                            }
-                            _ => {}
-                        }
-                    },
-                    parquet::basic::Type::FIXED_LEN_BYTE_ARRAY => println!("FIXED_LEN_BYTE_ARRAY {:?}", basic_info.name())
-                }
-            }
-            GroupType { basic_info, fields } => {
-//                match basic_info.logical_type() {
-//                    parquet::basic::LogicalType::LIST => {
-//                    }
-//                }
-                println!("group {:?}", basic_info);
-                for field in fields.iter() {
-                    println!("   field {:?} {:?}", field.name(), field.get_basic_info());
-                }
-            }
-        }
+        let vec = parquet_type_to_vec(element.borrow());
+        let field = parquet_type_to_arrow_field(element.borrow());
+        fields.push(field);
+        data.push(vec);
     }
 
     // data
@@ -124,4 +70,110 @@ fn main() {
 //        std::sync::Arc::new(schema),
 //        data
 //    );
+}
+
+fn parquet_type_to_vec(t: &parquet::schema::types::Type) -> Box<Any> {
+    use parquet::basic::Type;
+    match t {
+        PrimitiveType {
+            basic_info,
+            physical_type,
+            type_length: _,
+            scale: _,
+            precision: _
+        } => {
+            match physical_type {
+                Type::BOOLEAN => {
+                    return Box::new(Vec::<bool>::new());
+                }
+                Type::INT32 => {
+                    return Box::new(Vec::<i32>::new());
+                },
+                Type::INT64 => {
+                    return Box::new(Vec::<i64>::new());
+                },
+                Type::INT96 => {
+                    panic!("INT96 not implemented!");
+                },
+                Type::FLOAT => {
+                    return Box::new(Vec::<f32>::new());
+                },
+                Type::DOUBLE => {
+                    return Box::new(Vec::<f64>::new());
+                },
+                Type::BYTE_ARRAY => {
+                    match basic_info.logical_type() {
+                        LogicalType::UTF8 => {
+                            return Box::new(Vec::<String>::new());
+                        }
+                        _ => {
+                            panic!("Unknown type!");
+                        }
+                    }
+                },
+                Type::FIXED_LEN_BYTE_ARRAY => {
+                    panic!("Unknown type!");
+                }
+            }
+        },
+        GroupType { basic_info, fields } => {
+            panic!("Unknown type!");
+        }
+    }
+}
+
+fn parquet_type_to_arrow_field(t: &parquet::schema::types::Type) -> Field {
+    use parquet::basic::Type;
+    match t {
+        PrimitiveType {
+            basic_info,
+            physical_type,
+            type_length: _,
+            scale: _,
+            precision: _
+        } => {
+            let nullable = if basic_info.has_repetition() {
+                basic_info.repetition() != parquet::basic::Repetition::REQUIRED
+            } else {
+                false
+            };
+            let name = basic_info.name();
+            match physical_type {
+                Type::BOOLEAN => {
+                    return Field::new(name, DataType::Boolean, nullable);
+                },
+                Type::INT32 => {
+                    return Field::new(name, DataType::Int32, nullable);
+                },
+                Type::INT64 => {
+                    return Field::new(name, DataType::Int64, nullable);
+                },
+                Type::INT96 => {
+                    panic!("INT96 not implemented!");
+                },
+                Type::FLOAT => {
+                    return Field::new(name, DataType::Float32, nullable);
+                },
+                Type::DOUBLE => {
+                    return Field::new(name, DataType::Float64, nullable);
+                },
+                Type::BYTE_ARRAY => {
+                    match basic_info.logical_type() {
+                        LogicalType::UTF8 => {
+                            return Field::new(name, DataType::Utf8, nullable);
+                        }
+                        _ => {
+                            panic!("Unknown type!");
+                        }
+                    }
+                },
+                parquet::basic::Type::FIXED_LEN_BYTE_ARRAY => {
+                    panic!("Unknown type!");
+                }
+            }
+        },
+        GroupType { basic_info, fields } => {
+            panic!("Unknown type!");
+        }
+    };
 }
